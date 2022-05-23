@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <iostream>
 
 #include <libpmemobj++/make_persistent.hpp>
 #include <libpmemobj++/make_persistent_atomic.hpp>
@@ -207,6 +208,8 @@ public:
 	get(key_type key)
 	{
 		auto ret = get_leaf(key, nullptr);
+
+		std::cout << "ctree_map::get(): key=" << key << ", ptr=" << ret << std::endl;
 
 		return ret ? ret->value : nullptr;
 	}
