@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /* Copyright 2016-2020, Intel Corporation */
 
+#ifdef NVLEAK_SECURE
+#include "ctree_map_persistent_secure.hpp"
+#else
 #include "ctree_map_persistent.hpp"
+#endif
 #include "ctree_map_transient.hpp"
 #include <cstring>
 #include <iostream>
@@ -185,6 +189,10 @@ main(int argc, char *argv[])
 			<< std::endl;
 		return 1;
 	}
+
+#ifdef NVLEAK_SECURE
+	std::cout << "Using nvleak secure allocator" << std::endl;
+#endif
 
 	std::string path = argv[1];
 	std::string type = argv[2];
