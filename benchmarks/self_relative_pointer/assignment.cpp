@@ -13,7 +13,11 @@
 #include "../measure.hpp"
 #include <libpmemobj++/container/vector.hpp>
 #include <libpmemobj++/experimental/self_relative_ptr.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/transaction.hpp>
@@ -54,8 +58,13 @@ prepare_array(pmem::obj::pool_base &pop,
 	      pointer<pointer<value_type>[]> &arr_pointers,
 	      persistent_ptr<value_type> ptr)
 {
+#ifdef SECURE_PERSISTENCE
+	arr_pointers =
+		pmem::obj::make_persistent_secure<pointer<value_type>[]>(ARR_SIZE);
+#else
 	arr_pointers =
 		pmem::obj::make_persistent<pointer<value_type>[]>(ARR_SIZE);
+#endif
 
 	for (size_type i = 0; i < ARR_SIZE; ++i) {
 		arr_pointers[i] = pointer<value_type>{ptr};
@@ -109,8 +118,13 @@ main(int argc, char *argv[])
 		persistent_ptr<value_type> ptr;
 		persistent_ptr<value_type> ptr2;
 		pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+			ptr = pmem::obj::make_persistent_secure<value_type>();
+			ptr2 = pmem::obj::make_persistent_secure<value_type>();
+#else
 			ptr = pmem::obj::make_persistent<value_type>();
 			ptr2 = pmem::obj::make_persistent<value_type>();
+#endif
 			prepare_array<persistent_ptr>(pop, root->vec_pers_ptr,
 						      ptr);
 		});

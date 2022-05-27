@@ -11,7 +11,11 @@
 
 #include <libpmemobj++/experimental/inline_string.hpp>
 #include <libpmemobj++/experimental/radix_tree.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/pool.hpp>
 
@@ -242,7 +246,11 @@ main(int argc, char *argv[])
 
 		if (r->kv == nullptr) {
 			pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+				r->kv = pmem::obj::make_persistent_secure<kv_type>();
+#else
 				r->kv = pmem::obj::make_persistent<kv_type>();
+#endif
 			});
 		}
 	} catch (pmem::pool_error &e) {

@@ -13,7 +13,11 @@
 #include <vector>
 
 #include <libpmemobj++/container/concurrent_hash_map.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/transaction.hpp>
@@ -132,9 +136,15 @@ main(int argc, char *argv[])
 					path, LAYOUT, pool_size,
 					CREATE_MODE_RW);
 				pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+					pop.root()->pptr =
+						pmem::obj::make_persistent_secure<
+							persistent_map_type>();
+#else
 					pop.root()->pptr =
 						pmem::obj::make_persistent<
 							persistent_map_type>();
+#endif
 				});
 			} catch (pmem::pool_error &pe) {
 				std::cerr << "!pool::create: " << pe.what()

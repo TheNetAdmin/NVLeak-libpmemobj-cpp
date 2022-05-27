@@ -30,6 +30,11 @@ function(add_benchmark name)
 	target_link_libraries(benchmark-${name} ${LIBPMEMOBJ_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endfunction()
 
+function(add_benchmark_secure name)
+	add_benchmark(${name} ${ARGN})
+	target_compile_definitions(benchmark-${name} PRIVATE SECURE_PERSISTENCE)
+endfunction()
+
 add_check_whitespace(benchmarks-cmake ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
 add_cppstyle(benchmarks-common ${CMAKE_CURRENT_SOURCE_DIR}/*.*pp)
@@ -46,13 +51,17 @@ add_check_whitespace(benchmarks-radix_tree ${CMAKE_CURRENT_SOURCE_DIR}/radix/*.*
 
 if (TEST_CONCURRENT_HASHMAP)
 	add_benchmark(concurrent_hash_map_insert_open concurrent_hash_map/insert_open.cpp)
+	add_benchmark_secure(concurrent_hash_map_insert_open_secure concurrent_hash_map/insert_open.cpp)
 endif()
 
 if (TEST_SELF_RELATIVE_POINTER)
 	add_benchmark(self_relative_pointer_get self_relative_pointer/get.cpp)
 	add_benchmark(self_relative_pointer_assignment self_relative_pointer/assignment.cpp)
+	add_benchmark_secure(self_relative_pointer_get_secure self_relative_pointer/get.cpp)
+	add_benchmark_secure(self_relative_pointer_assignment_secure self_relative_pointer/assignment.cpp)
 endif()
 
 if (TEST_RADIX_TREE)
 	add_benchmark(radix_tree radix/radix_tree.cpp)
+	add_benchmark_secure(radix_tree_secure radix/radix_tree.cpp)
 endif()

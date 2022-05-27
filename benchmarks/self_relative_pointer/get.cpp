@@ -11,7 +11,11 @@
 #include <iostream>
 
 #include <libpmemobj++/experimental/self_relative_ptr.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/transaction.hpp>
@@ -46,8 +50,13 @@ prepare_array(pmem::obj::pool_base &pop, int arr_size)
 	pmem::obj::persistent_ptr<value_type> parr;
 
 	pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+		parr = pmem::obj::make_persistent_secure<value_type>(
+			static_cast<std::size_t>(arr_size));
+#else
 		parr = pmem::obj::make_persistent<value_type>(
 			static_cast<std::size_t>(arr_size));
+#endif
 	});
 
 	for (int i = 0; i < arr_size; ++i) {
@@ -111,8 +120,13 @@ main(int argc, char *argv[])
 			  << "ms" << std::endl;
 
 		pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+			pmem::obj::delete_persistent_secure<value_type>(
+				pop.root()->pptr, ARR_SIZE);
+#else
 			pmem::obj::delete_persistent<value_type>(
 				pop.root()->pptr, ARR_SIZE);
+#endif
 		});
 
 		pop.close();
@@ -127,8 +141,13 @@ main(int argc, char *argv[])
 		std::cerr << "!exception: " << e.what() << std::endl;
 		try {
 			pmem::obj::transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+				pmem::obj::delete_persistent_secure<value_type>(
+					pop.root()->pptr, ARR_SIZE);
+#else
 				pmem::obj::delete_persistent<value_type>(
 					pop.root()->pptr, ARR_SIZE);
+#endif
 			});
 
 			pop.close();
