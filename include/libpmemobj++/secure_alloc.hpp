@@ -13,6 +13,7 @@ namespace nvleak
 constexpr size_t page_shift{12};
 constexpr size_t total_nvsec_sets{256};
 constexpr size_t max_try_secure_alloc = (total_nvsec_sets << page_shift);
+static bool verbose_output_alloc = false;
 
 class page_field {
 public:
@@ -69,10 +70,16 @@ secure_alloc(F &&f, const page_field &pf, Args &&...args)
 		}
 	} while (!(pf.check_ptr((size_t)res.off)));
 
-	std::cout << "secure_alloc: tried [" << count
-		  << "] allocs, finalized at: [" << res.off << "]"
-		  << std::endl;
+	if (verbose_output_alloc) {
+		std::cout << "secure_alloc: tried [" << count
+			<< "] allocs, finalized at: [" << res.off << "]"
+			<< std::endl;
+	}
 	return res;
+}
+
+void set_alloc_print(bool verbose) {
+	verbose_output_alloc = verbose;
 }
 
 } /* namespace nvleak */
