@@ -16,7 +16,11 @@
 #include <libpmemobj++/detail/template_helpers.hpp>
 
 #include <libpmemobj++/defrag.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/mutex.hpp>
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
@@ -636,8 +640,13 @@ public:
 			if (my_seg == embedded_segments) {
 				size_type sz = segment_size(first_block) -
 					embedded_buckets;
+#ifdef SECURE_PERSISTENCE
+				delete_persistent_secure<bucket_type[]>(
+					(*my_table)[my_seg], sz);
+#else
 				delete_persistent<bucket_type[]>(
 					(*my_table)[my_seg], sz);
+#endif
 			}
 			(*my_table)[my_seg] = nullptr;
 		} else {
@@ -646,8 +655,13 @@ public:
 			for (segment_index_t b = blocks.first;
 			     b < blocks.second; ++b) {
 				if ((*my_table)[b] != nullptr) {
+#ifdef SECURE_PERSISTENCE
+					delete_persistent_secure<bucket_type[]>(
+						(*my_table)[b], block_size(b));
+#else
 					delete_persistent<bucket_type[]>(
 						(*my_table)[b], block_size(b));
+#endif
 					(*my_table)[b] = nullptr;
 				}
 			}
@@ -704,8 +718,14 @@ private:
 
 			size_type sz =
 				segment_size(first_block) - embedded_buckets;
+
+#ifdef SECURE_PERSISTENCE
+			(*my_table)[my_seg] =
+				make_persistent_secure<bucket_type[]>(sz);
+#else
 			(*my_table)[my_seg] =
 				make_persistent<bucket_type[]>(sz);
+#endif
 
 			persistent_ptr<bucket_type> base =
 				(*my_table)[embedded_segments].raw();
@@ -734,8 +754,14 @@ private:
 			for (segment_index_t b = blocks.first;
 			     b < blocks.second; ++b) {
 				assert((*my_table)[b] == nullptr);
+
+#ifdef SECURE_PERSISTENCE
+				(*my_table)[b] = make_persistent_secure<bucket_type[]>(
+					block_size(b));
+#else
 				(*my_table)[b] = make_persistent<bucket_type[]>(
 					block_size(b));
+#endif
 			}
 
 			flat_transaction::commit();
@@ -1039,7 +1065,11 @@ public:
 		if ((layout_features.compat & FEATURE_CONSISTENT_SIZE) &&
 		    tls_ptr) {
 			flat_transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+				delete_persistent_secure<tls_t>(tls_ptr);
+#else
 				delete_persistent<tls_t>(tls_ptr);
+#endif
 				tls_ptr = nullptr;
 			});
 		}
@@ -1224,8 +1254,14 @@ public:
 	{
 		assert(pmemobj_tx_stage() == TX_STAGE_WORK);
 
+
+#ifdef SECURE_PERSISTENCE
+		new_node = pmem::obj::make_persistent_secure<Node>(
+			b->node_list, std::forward<Args>(args)...);
+#else
 		new_node = pmem::obj::make_persistent<Node>(
 			b->node_list, std::forward<Args>(args)...);
+#endif
 		b->node_list = new_node; /* bucket is locked */
 	}
 
@@ -1692,9 +1728,15 @@ protected:
 	void
 	delete_node(const node_ptr_t &n)
 	{
+#ifdef SECURE_PERSISTENCE
+		delete_persistent_secure<node>(
+			detail::static_persistent_pool_pointer_cast<node>(n)
+				.get_persistent_ptr(this->my_pool_uuid));
+#else
 		delete_persistent<node>(
 			detail::static_persistent_pool_pointer_cast<node>(n)
 				.get_persistent_ptr(this->my_pool_uuid));
+#endif
 	}
 
 	template <typename K>
@@ -2181,7 +2223,12 @@ public:
 
 			auto pop = get_pool_base();
 			flat_transaction::run(pop, [&] {
+
+#ifdef SECURE_PERSISTENCE
+				this->tls_ptr = make_persistent_secure<tls_t>();
+#else
 				this->tls_ptr = make_persistent<tls_t>();
+#endif
 				this->on_init_size =
 					static_cast<size_t>(actual_size);
 				this->value_size = sizeof(value_type);

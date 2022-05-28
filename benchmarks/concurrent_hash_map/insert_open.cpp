@@ -117,6 +117,9 @@ main(int argc, char *argv[])
 
 		const char *path = argv[1];
 
+#ifdef SECURE_PERSISTENCE
+		// nvleak::set_alloc_print(true);
+#endif
 		if (mode == "create") {
 			size_t n_inserts = std::stoull(argv[3]);
 			size_t n_threads = std::stoull(argv[4]);
