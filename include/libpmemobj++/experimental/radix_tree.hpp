@@ -23,7 +23,11 @@
 #include <libpmemobj++/experimental/inline_string.hpp>
 #include <libpmemobj++/experimental/self_relative_ptr.hpp>
 #include <libpmemobj++/experimental/v.hpp>
+#ifdef SECURE_PERSISTENCE
+#include <libpmemobj++/make_persistent_secure.hpp>
+#else
 #include <libpmemobj++/make_persistent.hpp>
+#endif
 #include <libpmemobj++/p.hpp>
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pext.hpp>
@@ -1030,6 +1034,16 @@ radix_tree<Key, Value, BytesView, MtMode>::clear_garbage(size_t n)
 
 	flat_transaction::run(pop, [&] {
 		for (auto &e : garbages[n]) {
+#ifdef SECURE_PERSISTENCE
+			if (is_leaf(e))
+				delete_persistent_secure<radix_tree::leaf>(
+					persistent_ptr<radix_tree::leaf>(
+						get_leaf(e)));
+			else
+				delete_persistent_secure<radix_tree::node>(
+					persistent_ptr<radix_tree::node>(
+						get_node(e)));
+#else
 			if (is_leaf(e))
 				delete_persistent<radix_tree::leaf>(
 					persistent_ptr<radix_tree::leaf>(
@@ -1038,6 +1052,7 @@ radix_tree<Key, Value, BytesView, MtMode>::clear_garbage(size_t n)
 				delete_persistent<radix_tree::node>(
 					persistent_ptr<radix_tree::node>(
 						get_node(e)));
+#endif
 		}
 
 		garbages[n].clear();
@@ -1440,8 +1455,13 @@ radix_tree<Key, Value, BytesView, MtMode>::internal_emplace(const K &k,
 		 * We have to allocate new internal node above n. */
 		pointer_type node;
 		flat_transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+			node = make_persistent_secure<radix_tree::node>(
+				load(parent_ref(n)), diff, bitn_t(FIRST_NIB));
+#else
 			node = make_persistent<radix_tree::node>(
 				load(parent_ref(n)), diff, bitn_t(FIRST_NIB));
+#endif
 			store(node->embedded_entry, make_leaf(node));
 			store(node->child[slice_index(leaf_key[diff],
 						      bitn_t(FIRST_NIB))],
@@ -1462,8 +1482,13 @@ radix_tree<Key, Value, BytesView, MtMode>::internal_emplace(const K &k,
 		flat_transaction::run(pop, [&] {
 			/* We have to add new node at the edge from parent to n
 			 */
+#ifdef SECURE_PERSISTENCE
+			node = make_persistent_secure<radix_tree::node>(
+				load(parent_ref(n)), diff, bitn_t(FIRST_NIB));
+#else
 			node = make_persistent<radix_tree::node>(
 				load(parent_ref(n)), diff, bitn_t(FIRST_NIB));
+#endif
 			store(node->embedded_entry, n);
 			store(node->child[slice_index(key[diff],
 						      bitn_t(FIRST_NIB))],
@@ -1485,8 +1510,13 @@ radix_tree<Key, Value, BytesView, MtMode>::internal_emplace(const K &k,
 	 * node. */
 	pointer_type node;
 	flat_transaction::run(pop, [&] {
+#ifdef SECURE_PERSISTENCE
+		node = make_persistent_secure<radix_tree::node>(load(parent_ref(n)),
+							 diff, sh);
+#else
 		node = make_persistent<radix_tree::node>(load(parent_ref(n)),
 							 diff, sh);
+#endif
 		store(node->child[slice_index(leaf_key[diff], sh)], n);
 		store(node->child[slice_index(key[diff], sh)], make_leaf(node));
 
@@ -1586,7 +1616,11 @@ radix_tree<Key, Value, BytesView, MtMode>::emplace(Args &&... args)
 		ret = internal_emplace(leaf_->key(), make_leaf);
 
 		if (!ret.second)
+#ifdef SECURE_PERSISTENCE
+			delete_persistent_secure<leaf>(leaf_);
+#else
 			delete_persistent<leaf>(leaf_);
+#endif
 	});
 
 	return ret;
@@ -2204,7 +2238,11 @@ radix_tree<Key, Value, BytesView, MtMode>::free(persistent_ptr<T> ptr)
 	if (MtMode && ebr_ != nullptr)
 		garbages[ebr_->staging_epoch()].emplace_back(ptr);
 	else
+#ifdef SECURE_PERSISTENCE
+		delete_persistent_secure<T>(ptr);
+#else
 		delete_persistent<T>(ptr);
+#endif
 }
 
 /**

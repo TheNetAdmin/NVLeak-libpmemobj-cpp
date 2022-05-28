@@ -207,7 +207,9 @@ main(int argc, char *argv[])
 		show_usage(argv);
 		return 1;
 	}
-
+#ifdef SECURE_PERSISTENCE
+	// nvleak::set_alloc_print(true);
+#endif
 	const char *path = argv[1];
 	if (argc > 2) {
 		params.count = std::stoul(argv[2]);

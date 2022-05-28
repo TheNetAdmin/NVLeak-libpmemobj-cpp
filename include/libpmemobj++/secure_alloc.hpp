@@ -52,6 +52,7 @@ private:
 	}
 };
 
+/* https://stackoverflow.com/a/9864472 */
 template <typename F, typename... Args>
 decltype(auto)
 secure_alloc(F &&f, const page_field &pf, Args &&...args)

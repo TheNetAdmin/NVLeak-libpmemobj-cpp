@@ -132,22 +132,22 @@ main(int argc, char *argv[])
 		self_relative_ptr<value_type> self_ptr{ptr};
 
 		std::cout << "Run time swap persistent ptr "
-			  << measure<std::chrono::milliseconds>([&] {
+			  << measure<std::chrono::nanoseconds>([&] {
 				     pmem::obj::transaction::run(pop, [&] {
 					     benchmark_swap(root->vec_pers_ptr,
 							    ptr);
 				     });
 			     })
-			  << "ms" << std::endl;
+			  << "ns" << std::endl;
 
 		std::cout << "Run time assignment persistent ptr "
-			  << measure<std::chrono::milliseconds>([&] {
+			  << measure<std::chrono::nanoseconds>([&] {
 				     pmem::obj::transaction::run(pop, [&] {
 					     benchmark_assignment(
 						     root->vec_pers_ptr, ptr2);
 				     });
 			     })
-			  << "ms" << std::endl;
+			  << "ns" << std::endl;
 
 		pmem::obj::transaction::run(pop, [&] {
 			pmem::obj::delete_persistent<
@@ -158,23 +158,23 @@ main(int argc, char *argv[])
 		});
 
 		std::cout << "Run time swap self-relative ptr "
-			  << measure<std::chrono::milliseconds>([&] {
+			  << measure<std::chrono::nanoseconds>([&] {
 				     pmem::obj::transaction::run(pop, [&] {
 					     benchmark_swap(root->vec_self_ptr,
 							    self_ptr);
 				     });
 			     })
-			  << "ms" << std::endl;
+			  << "ns" << std::endl;
 
 		std::cout << "Run time assignment self-relative ptr "
-			  << measure<std::chrono::milliseconds>([&] {
+			  << measure<std::chrono::nanoseconds>([&] {
 				     pmem::obj::transaction::run(pop, [&] {
 					     benchmark_assignment(
 						     root->vec_self_ptr,
 						     self_ptr2);
 				     });
 			     })
-			  << "ms" << std::endl;
+			  << "ns" << std::endl;
 
 		pmem::obj::transaction::run(pop, [&] {
 			pmem::obj::delete_persistent<value_type>(ptr);
