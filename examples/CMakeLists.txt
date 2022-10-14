@@ -78,6 +78,15 @@ function(add_example name)
 	add_dependencies(examples example-${name})
 endfunction()
 
+function(add_example_secure name)
+	set(srcs ${ARGN})
+	prepend(srcs ${CMAKE_CURRENT_SOURCE_DIR} ${srcs})
+	add_executable(example-${name} ${srcs})
+	target_compile_definitions(example-${name} PUBLIC NVLEAK_SECURE)
+	target_link_libraries(example-${name} ${LIBPMEMOBJ_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+	add_dependencies(examples example-${name})
+endfunction()
+
 # ----------------------------------------------------------------- #
 ## Add examples (some under the 'if', required for specific example)
 # ----------------------------------------------------------------- #
@@ -150,6 +159,8 @@ else()
 endif()
 
 add_example(map_cli map_cli/map_cli.cpp)
+
+add_example_secure(map_cli_sec map_cli/map_cli.cpp)
 
 add_example(array array/array.cpp)
 
